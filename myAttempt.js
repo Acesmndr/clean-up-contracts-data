@@ -6,16 +6,15 @@ var total=0;
 var temp;			
 var contracts;
 var final=new Array();
-for( var i=0; i<13; i++ ) {
-  final.push( [] );
-}
 
 $.ajax({
     type: "GET",
     url: "awards.csv",
     dataType: "text",
     success: function(data) {
-			console.log((data.match(/"/g)||[]).length);
+			while((data.match(/(".*),(.*")/)||[]).length!=0){
+				data=data.replace(/(".*),(.*")/,"$1 xxcommaxx $2");
+			}
 			awards=data.split(/\n/);
 			var l=awards.length;
 			for(i=0;i<l;i++){
@@ -32,23 +31,10 @@ $.ajax({
     url: "contracts.csv",
     dataType: "text",
     success: function(data) {
-			temp=data;
-			while((temp.match(/(".*),(.*")/)||[]).length!=0){
-			temp=temp.replace(/(".*),(.*")/,"$1 xxcommaxx $2");
+			while((data.match(/(".*),(.*")/)||[]).length!=0){
+				data=data.replace(/(".*),(.*")/,"$1 xxcommaxx $2");
 			}
-			//var count=((data.match(/\"/g)||[]).length)/2;
-			//alert(count);
-			//while(count!=0){			
-			//var r=/".*,.*"/.exec(temp);
-			
-			//var s=r[0].replace(",","xxcommaxx");
-			//console.log(r[0],s);
-			//temp.replace(r[0],s);
-			console.log("temp is",temp);
-			//count--;
-			//}
-			//console.log("number is ",data.search("\".*\""));
-			contracts=temp.split(/\r\n/);
+			contracts=data.split(/\r\n/);
 			var l=contracts.length;
 			for(i=0;i<l;i++){
 				contracts[i]=contracts[i].split(",");//(?=([^\"]*\"[^\"]*\")*(?![^\"]*\"))");
@@ -77,35 +63,24 @@ var j=0,k=0;
 		for(i=1;i<contracts.length;i++){
 	    		ctemp.push(contracts[i].splice(0,1));
 		}
-		
-		var finalLength=awards.length+contracts.length-2;
-		var carr=new Array(7);
-		var awarr=new Array(5);
-		for(var i=1;i<finalLength;i++){
+		var template=new Array(awards.length);
+		for(var i=1;i<contracts.length-1;i++){
+			console.log("j is",j,"& i is",i);
 			var ta=parseInt(atemp[j].toLocaleString().slice(14));
-			var tc=parseInt(ctemp[k].toLocaleString().slice(14));
+			var tc=parseInt(ctemp[i-1].toLocaleString().slice(14));
 			if(ta==tc){
 				console.log("equal");
-				finalLength--;
-				final[i]=$.merge(atemp[j],contracts[k+1]);
+				final[i]=$.merge(atemp[j],contracts[i-1+1]);
 				final[i]=$.merge(final[i],awards[j+1]);
-				if(contracts[k+1][0]=="Closed"){
-				total+=parseInt(awards[j+1][4]);
+				if(contracts[i-1+1][0]=="Closed"){
+					total+=parseInt(awards[j+1][4]);
 				}
-				console.log(contracts[k+1][1],awards[j+1][4]);
+				console.log(contracts[i-1+1][1],awards[j+1][4]);
 				j++;
-				k++;
 				}else{
-					if(ta>tc){
-						console.log("entered");
-						final[i]=$.merge(ctemp[k],contracts[k+1]);
-						final[i]=$.merge(final[i],awarr);
-						k++;
-						}else{
-						final[i]=$.merge(atemp[j],awarr);
-						final[i]=$.merge(final[i],awards[j+1]);
-						j++;
-					}};
+				final[i]=$.merge(ctemp[i-1],contracts[i-1+1]);
+				final[i]=$.merge(final[i],template);
+				}
 				};	
 	console.log("FINAL",final);
 
@@ -132,6 +107,6 @@ downloadLink.download = "final.csv";
 document.body.appendChild(downloadLink);
 downloadLink.click();
 document.body.removeChild(downloadLink);
-alert("Total Amount of Closed Contracts: "+total);
-
+//alert("Total Amount of Closed Contracts: "+total);
+$("#display").html("Total Amount of Closed Contracts: "+total);
 });
