@@ -2,7 +2,8 @@ $.ajaxSetup({ mimeType: "text/plain" });
 var awards,csvContent;
 var  ta,tc;
 //var atemp=new Array(),ctemp=new Array();   
-				
+var total=0;	
+var temp;			
 var contracts;
 var final=new Array();
 for( var i=0; i<13; i++ ) {
@@ -14,6 +15,7 @@ $.ajax({
     url: "awards.csv",
     dataType: "text",
     success: function(data) {
+			console.log((data.match(/"/g)||[]).length);
 			awards=data.split(/\n/);
 			var l=awards.length;
 			for(i=0;i<l;i++){
@@ -30,10 +32,26 @@ $.ajax({
     url: "contracts.csv",
     dataType: "text",
     success: function(data) {
-			contracts=data.split(/\r\n/);
+			temp=data;
+			while((temp.match(/(".*),(.*")/)||[]).length!=0){
+			temp=temp.replace(/(".*),(.*")/,"$1 xxcommaxx $2");
+			}
+			//var count=((data.match(/\"/g)||[]).length)/2;
+			//alert(count);
+			//while(count!=0){			
+			//var r=/".*,.*"/.exec(temp);
+			
+			//var s=r[0].replace(",","xxcommaxx");
+			//console.log(r[0],s);
+			//temp.replace(r[0],s);
+			console.log("temp is",temp);
+			//count--;
+			//}
+			//console.log("number is ",data.search("\".*\""));
+			contracts=temp.split(/\r\n/);
 			var l=contracts.length;
 			for(i=0;i<l;i++){
-				contracts[i]=contracts[i].split(',');
+				contracts[i]=contracts[i].split(",");//(?=([^\"]*\"[^\"]*\")*(?![^\"]*\"))");
 				};
 			console.log(contracts);
            		},
@@ -67,9 +85,14 @@ var j=0,k=0;
 			var ta=parseInt(atemp[j].toLocaleString().slice(14));
 			var tc=parseInt(ctemp[k].toLocaleString().slice(14));
 			if(ta==tc){
+				console.log("equal");
 				finalLength--;
 				final[i]=$.merge(atemp[j],contracts[k+1]);
 				final[i]=$.merge(final[i],awards[j+1]);
+				if(contracts[k+1][0]=="Closed"){
+				total+=parseInt(awards[j+1][4]);
+				}
+				console.log(contracts[k+1][1],awards[j+1][4]);
 				j++;
 				k++;
 				}else{
@@ -96,6 +119,10 @@ final.forEach(function(infoArray, index){
 
 }); 
 
+while(csvContent.match("xxcommaxx")!=null){
+csvContent=csvContent.replace("xxcommaxx",",");
+}
+console.log(csvContent);
 var encodedUri = encodeURI(csvContent);
 //window.open(encodedUri,final.csv);
 var downloadLink = document.createElement("a");
@@ -105,6 +132,6 @@ downloadLink.download = "final.csv";
 document.body.appendChild(downloadLink);
 downloadLink.click();
 document.body.removeChild(downloadLink);
-
+alert("Total Amount of Closed Contracts: "+total);
 
 });
